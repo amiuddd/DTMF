@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantalla Dinámica</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+}
+body {
+    background: black;
+    overflow: hidden;
+    cursor: pointer;
+}
+.fullscreen-img {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+.flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+}
+.tap-msg {
+    position: fixed;
+    bottom: 30px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+
+<img id="mainImage" class="fullscreen-img">
+<div class="flash" id="flash"></div>
+<div class="tap-msg" id="msg">Toca la pantalla 📸</div>
+
+<audio id="bgMusic" loop>
+    <source src="audio/musica.mp3" type="audio/mpeg">
+</audio>
+<audio id="flashSound">
+    <source src="audio/flash.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const formats = ["jpg", "jpeg", "png"];
+const finalImages = [];
+const img = document.getElementById("mainImage");
+const flash = document.getElementById("flash");
+const music = document.getElementById("bgMusic");
+const flashSound = document.getElementById("flashSound");
+const msg = document.getElementById("msg");
+
+let currentIndex = 0;
+let started = false;
+
+/* Detectar UNA imagen válida por img1 → img5 */
+async function detectImages() {
+    for (let i = 1; i <= 5; i++) {
+        for (let ext of formats) {
+            const path = `img/img${i}.${ext}`;
+            const exists = await imageExists(path);
+            if (exists) {
+                finalImages.push(path);
+                break;
+            }
+        }
+    }
+
+    // Mostrar img1 al inicio
+    img.src = finalImages[0];
+}
+
+function imageExists(src) {
+    return new Promise(resolve => {
+        const testImg = new Image();
+        testImg.onload = () => resolve(true);
+        testImg.onerror = () => resolve(false);
+        testImg.src = src;
+    });
+}
+
+detectImages();
+
+function flashEffect() {
+    flash.style.opacity = "1";
+    setTimeout(() => flash.style.opacity = "0", 120);
+}
+
+function changeImage() {
+    currentIndex = (currentIndex + 1) % finalImages.length;
+    img.style.opacity = "0";
+    setTimeout(() => {
+        img.src = finalImages[currentIndex];
+        img.style.opacity = "1";
+    }, 120);
+}
+
+function startExperience() {
+    flashEffect();
+    changeImage(); // 👈 primer toque = img2
+
+    flashSound.currentTime = 0;
+    flashSound.play();
+
+    if (!started) {
+        music.volume = 0.6;
+        music.play();
+        started = true;
+        msg.style.display = "none";
+    }
+}
+
+document.addEventListener("click", startExperience);
+document.addEventListener("touchstart", startExperience);
+</script>
+
+</body>
+</html>
